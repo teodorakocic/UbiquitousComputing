@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/homeFragment"
+        android:contentDescription="home fragment"
+        android:icon="@drawable/ic_car_navigation"
+        android:title="Home" />
+
+    <item
+        android:id="@+id/controlsFragment"
+        android:icon="@drawable/ic_dashboard_navigation"
+        android:contentDescription="training fragment"
+        android:title="Controls" />
+
+    <item
+        android:id="@+id/stabilityFragment"
+        android:icon="@drawable/ic_stability_navigation"
+        android:contentDescription="device fragment"
+        android:title="Stability" />
+</menu>
