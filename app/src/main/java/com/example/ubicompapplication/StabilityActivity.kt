@@ -76,6 +76,7 @@ class StabilityActivity : AppCompatActivity() {
                     tvESC.text = "activated"
                     progressESC.visibility = View.VISIBLE
                 } else {
+                    stopForegroundService()
                     tvRoadPrediction.text = "deactivated"
                     progressRoadCondition.visibility = View.INVISIBLE
                     tvESC.text = "deactivated"
@@ -97,7 +98,7 @@ class StabilityActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        stopForegroundService()
+//        stopForegroundService()
     }
 
     private fun startForegroundService() {
