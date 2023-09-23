@@ -187,14 +187,14 @@
                 android:background="@drawable/controls_shape">
 
                 <TextView
-                    android:id="@+id/tv_control_trunk"
+                    android:id="@+id/tv_control_lights"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_marginTop="32dp"
                     android:fontFamily="@font/urbanist"
                     android:gravity="center"
-                    android:text="@string/trunk"
+                    android:text="@string/lights"
                     android:textColor="@color/lila_switch_on"
                     android:textSize="18sp"
                     android:textStyle="bold"
@@ -209,20 +209,20 @@
                     android:layout_marginTop="12dp"
                     android:fontFamily="@font/urbanist"
                     android:gravity="center"
-                    android:text="Opened"
+                    android:text="Off"
                     android:textColor="@color/lila_switch_on"
                     android:textSize="16sp"
                     android:textStyle="normal"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/tv_control_trunk" />
+                    app:layout_constraintTop_toBottomOf="@+id/tv_control_lights" />
 
                 <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/sw_trunk"
+                    android:id="@+id/sw_lights"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:rotation="90"
-                    android:textOff="Opened"
-                    android:textOn="Closed"
+                    android:textOff="Off"
+                    android:textOn="On"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"

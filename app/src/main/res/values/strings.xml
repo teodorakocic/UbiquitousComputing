@@ -7,7 +7,7 @@
     <string name="started">Started</string>
     <string name="stopped">Stopped</string>
     <string name="off">Off</string>
-    <string name="trunk">Trunk</string>
+    <string name="lights">Lights</string>
     <string name="doors">Doors</string>
     <string name="external_parameters">External parameters</string>
     <string name="controls">Controls</string>
@@ -17,8 +17,8 @@
     <string name="heating">Heating</string>
     <string name="airwave">Airwave</string>
     <string name="stability">Stability</string>
-    <string name="gyroscope">Gyroscope</string>
-    <string name="road_prediction">Road prediction</string>
+    <string name="road_curvature">Radius of road\'s curvature</string>
+    <string name="parking_sensor">Parking sensors</string>
     <string name="acceleration">Acceleration</string>
     <string name="electronic_stability_control">Electronic stability control</string>
     <string name="fan">Fan</string>

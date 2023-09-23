@@ -4,6 +4,6 @@
     <solid android:color="@color/lila_switch_off" />
     <corners android:radius="25dp" />
     <stroke
-        android:width="4dp"
+        android:width="3dp"
         android:color="@color/blue" />
 </shape>

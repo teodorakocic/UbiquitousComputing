@@ -4,17 +4,31 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.graphics.Color
 import android.graphics.ColorSpace.connect
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.eclipse.paho.android.service.MqttAndroidClient
+import org.eclipse.paho.client.mqttv3.MqttMessage
+import java.util.Timer
+import java.util.TimerTask
 
 
 class ControlsActivity : AppCompatActivity() {
@@ -30,9 +44,11 @@ class ControlsActivity : AppCompatActivity() {
     private lateinit var clCooling: ConstraintLayout
     private lateinit var clVentilation: ConstraintLayout
     private lateinit var bottomMenu: BottomNavigationView
-    private var currentTemperature: Double = 32.25
-    private var currentPressure: Double = 104.21
-    private lateinit var mqttClient: MqttConnection
+    private var currentTemperature: Double = 0.0
+    private var currentPressure: Double = 0.0
+    lateinit var mqttClient: MqttConnection
+    private lateinit var preferences: SharedPreferences
+    private lateinit var edit: SharedPreferences.Editor
 
     @RequiresApi(Build.VERSION_CODES.O)
     @SuppressLint("SetTextI18n")
@@ -66,54 +82,184 @@ class ControlsActivity : AppCompatActivity() {
             return@setOnMenuItemClickListener false
         }
 
-        tvCurrentTemperature.text = "$currentTemperature C"
-        tvCurrentPressure.text = "$currentPressure kPa"
+        preferences = this.getSharedPreferences(Constants.PREFERENCE_SMART_CAR, Context.MODE_PRIVATE)
+        edit = preferences.edit()
 
-        val preferences = this.getSharedPreferences(Constants.PREFERENCE_SMART_CAR, Context.MODE_PRIVATE)
-        val edit = preferences.edit()
+        tvHeatingValue.text = "${Constants.TEMPERATURE_HIGH} C"
+        tvCoolingValue.text = "${Constants.TEMPERATURE_LOW} C"
+        tvAirwaveValue.text = "${Constants.AIRWAVE} C"
 
-        mqttClient = MqttConnection(applicationContext)
-        mqttClient.connect()
-//        mqttClient.subscribe("android/test")
-//        mqttClient.receiveMessages()
-
-        if(currentTemperature in 18.0..24.0) {
-            clHeating.setBackgroundResource(R.drawable.controls_shape)
-            clCooling.setBackgroundResource(R.drawable.controls_shape)
-            tvCoolerValue.text = "Off"
-            tvCoolerValue.setTextColor(Color.parseColor("#342675"))
+        if(preferences.getBoolean("engine", false))
+        {
+            mqttClient = MqttConnection(applicationContext, arrayOf(Constants.TOPIC), IntArray(1) { 0 })
+            mqttClient.init()
+            initMqttStatusListener()
+            mqttClient.connect()
         } else {
-            if(preferences.getBoolean("engine", false))
-            {
-                if(!preferences.getBoolean("doors", false)) {
-                    Toast.makeText(
-                        this@ControlsActivity,
-                        "Close the door to make the air conditioner/fan work more efficiently!",
-                        Toast.LENGTH_SHORT
-                    ).show()
+            engineStoppedUI()
+            Toast.makeText(this@ControlsActivity, "Start Your car for monitoring temperature and pressure values!", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun initMqttStatusListener() {
+        mqttClient.mqttStatusListener = object : MqttStatusListener {
+
+            override fun onConnectFailure(exception: Throwable) {
+                displayInDebugLog("Failed to connect")
+            }
+
+            override fun onConnectionLost(exception: Throwable) {
+                displayInDebugLog("The Connection was lost.")
+            }
+
+            @SuppressLint("SetTextI18n")
+            override fun onMessageArrived(topic: String, message: MqttMessage) {
+                if(topic.contains("temp")) {
+                    receivedTemperature(message)
                 }
-                if(currentTemperature < 18) {
-                    clHeating.setBackgroundResource(R.drawable.controls_shape_heating_on)
-                    tvCoolerValue.text = "Heat"
-                    tvCoolerValue.setTextColor(Color.parseColor("#E3242B"))
+                if(topic.contains("press")) {
+                    receivedPressure(message)
                 }
-                if(currentTemperature > 24) {
-                    clCooling.setBackgroundResource(R.drawable.controls_shape_cooling_on)
-                    tvCoolerValue.text = "Cold"
-                    tvCoolerValue.setTextColor(Color.parseColor("#00CCFF"))
+                if(topic.contains("alarmHighTemp")) {
+                    receivedAlarmForHighTemperature(message)
                 }
-                if(currentPressure in 98.0 .. 103.5) {
-                    clVentilation.setBackgroundResource(R.drawable.controls_shape)
-                    tvFanValue.text = "Off"
-                    tvFanValue.setTextColor(Color.parseColor("#342675"))
-                } else {
-                    clVentilation.setBackgroundResource(R.drawable.controls_shape_ventilation_on)
-                    tvFanValue.text = "On"
-                    tvFanValue.setTextColor(Color.parseColor("#90EE90"))
+                if(topic.contains("alarmHighTemp")) {
+                    receivedAlarmForLowTemperature(message)
                 }
-                edit.putBoolean("climate", true)
-                edit.commit()
+                if(topic.contains("alarmPress")) {
+                    receivedAlarmForPressureLimits(message)
+                }
+                displayInMessagesList(String(message.payload))
+            }
+
+            override fun onDisconnectService() {
+                displayInDebugLog("The Connection was stopped.")
+            }
+
+            override fun onTopicSubscriptionSuccess() {
+                displayInDebugLog("Subscribed!")
+            }
+
+            override fun onTopicSubscriptionError(exception: Throwable) {
+                displayInDebugLog("Failed to subscribe")
             }
         }
+    }
+
+    private fun displayInMessagesList(message: String) {
+        Log.d("new received message", message)
+    }
+
+    private fun displayInDebugLog(message: String) {
+        Log.i("display in debug", message)
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun receivedTemperature(message: MqttMessage) {
+        tvCurrentTemperature.text = "${readRuleValue(String(message.payload), Constants.TEMP_STREAM)} C"
+        currentTemperature = readRuleValue(String(message.payload), Constants.TEMP_STREAM).toDouble()
+        if(currentTemperature < Constants.TEMPERATURE_LOW) {
+            clHeating.setBackgroundResource(R.drawable.controls_shape_heating_on)
+        }
+        if(currentTemperature > Constants.TEMPERATURE_HIGH) {
+            clCooling.setBackgroundResource(R.drawable.controls_shape_cooling_on)
+        }
+        if(currentTemperature in Constants.TEMPERATURE_LOW..Constants.TEMPERATURE_HIGH) {
+            if(!preferences.getBoolean("climate", false)) {
+                clHeating.setBackgroundResource(R.drawable.controls_shape)
+                clCooling.setBackgroundResource(R.drawable.controls_shape)
+                tvCoolerValue.text = "Off"
+                tvCoolerValue.setTextColor(Color.parseColor("#342675"))
+            }
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun receivedPressure(message: MqttMessage) {
+        tvCurrentPressure.text = "${readRuleValue(String(message.payload), Constants.PRESSURE_STREAM)} kPa"
+        currentPressure = readRuleValue(String(message.payload), Constants.PRESSURE_STREAM).toDouble()
+        if(currentPressure in Constants.PRESSURE_LOW .. Constants.PRESSURE_HIGH) {
+            if(preferences.getBoolean("climate", false)) {
+                clVentilation.setBackgroundResource(R.drawable.controls_shape)
+                tvFanValue.text = "Off"
+                tvFanValue.setTextColor(Color.parseColor("#342675"))
+            }
+        } else {
+            clVentilation.setBackgroundResource(R.drawable.controls_shape_ventilation_on)
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun receivedAlarmForHighTemperature(message: MqttMessage) {
+        if(!preferences.getBoolean("doors", false)) {
+            Toast.makeText(this@ControlsActivity, "Close the door to make the air conditioner work more efficiently!", Toast.LENGTH_SHORT).show()
+        }
+        if(readRuleValue(String(message.payload), Constants.HIGH_TEMP_ALARM).contains("on")) {
+            clHeating.setBackgroundResource(R.drawable.controls_shape)
+            clCooling.setBackgroundResource(R.drawable.controls_shape_cooling_on)
+            tvCoolerValue.text = "Cold"
+            tvCoolerValue.setTextColor(Color.parseColor("#00CCFF"))
+            edit.putBoolean("climate", true)
+            edit.commit()
+            Handler(Looper.getMainLooper()).postDelayed({
+                edit.putBoolean("climate", false)
+                edit.commit()
+            }, 3_000)
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun receivedAlarmForLowTemperature(message: MqttMessage) {
+        if(!preferences.getBoolean("doors", false)) {
+            Toast.makeText(this@ControlsActivity, "Close the door to make the air conditioner work more efficiently!", Toast.LENGTH_SHORT).show()
+        }
+        if(readRuleValue(String(message.payload), Constants.LOW_TEMP_ALARM).contains("on")) {
+            clCooling.setBackgroundResource(R.drawable.controls_shape)
+            clHeating.setBackgroundResource(R.drawable.controls_shape_heating_on)
+            tvCoolerValue.text = "Heat"
+            tvCoolerValue.setTextColor(Color.parseColor("#E3242B"))
+            edit.putBoolean("climate", true)
+            edit.commit()
+            Handler(Looper.getMainLooper()).postDelayed({
+                edit.putBoolean("climate", false)
+                edit.commit()
+            }, 3_000)
+        }
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun receivedAlarmForPressureLimits(message: MqttMessage) {
+        if(!preferences.getBoolean("doors", false)) {
+            Toast.makeText(this@ControlsActivity, "Close the door to make the fan work more efficiently!", Toast.LENGTH_SHORT).show()
+        }
+        if(readRuleValue(String(message.payload), Constants.PRESS_LIMITS_ALARM).contains("On")) {
+            clVentilation.setBackgroundResource(R.drawable.controls_shape_ventilation_on)
+            tvFanValue.text = "On"
+            tvFanValue.setTextColor(Color.parseColor("#90EE90"))
+            edit.putBoolean("climate", true)
+            edit.commit()
+            Handler(Looper.getMainLooper()).postDelayed({
+                edit.putBoolean("climate", false)
+                edit.commit()
+            }, 4_500)
+        }
+    }
+
+    private fun engineStoppedUI() {
+        tvCurrentTemperature.text = "--"
+        tvCurrentPressure.text = "--"
+        tvHeatingValue.text = "--"
+        tvCoolingValue.text = "--"
+        tvAirwaveValue.text = "--"
+    }
+
+    private fun readRuleValue(payload: String, key: String): String {
+        val jsonObject: JsonObject = Json.decodeFromString(payload)
+        return jsonObject[key].toString()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mqttClient.disconnect()
     }
 }

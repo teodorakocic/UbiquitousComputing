@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -24,7 +23,7 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var swClimate: SwitchCompat
     private lateinit var tvTrunk: TextView
     private lateinit var tvTrunkValue: TextView
-    private lateinit var swTrunk: SwitchCompat
+    private lateinit var swLights: SwitchCompat
     private lateinit var clEngine: ConstraintLayout
     private lateinit var clClimate: ConstraintLayout
     private lateinit var clTrunk: ConstraintLayout
@@ -39,13 +38,13 @@ class HomeActivity : AppCompatActivity() {
         tvEngineValue = findViewById(R.id.tv_control_engine_value)
         tvClimate = findViewById(R.id.tv_control_climate)
         tvClimateValue = findViewById(R.id.tv_control_climate_value)
-        tvTrunk = findViewById(R.id.tv_control_trunk)
+        tvTrunk = findViewById(R.id.tv_control_lights)
         tvTrunkValue = findViewById(R.id.tv_control_trunk_value)
         tvDoors = findViewById(R.id.tv_control_doors)
         tvDoorsValue = findViewById(R.id.tv_control_doors_value)
         swEngine = findViewById(R.id.sw_engine)
         swClimate = findViewById(R.id.sw_climate)
-        swTrunk = findViewById(R.id.sw_trunk)
+        swLights = findViewById(R.id.sw_lights)
         swDoors = findViewById(R.id.sw_doors)
         clEngine = findViewById(R.id.cl_engine)
         clClimate = findViewById(R.id.cl_climate)
@@ -112,18 +111,18 @@ class HomeActivity : AppCompatActivity() {
             tvDoorsValue.text = swDoors.textOff
         }
 
-        if(preferences.getBoolean("trunk", false)) {
-            swTrunk.isChecked = true
+        if(preferences.getBoolean("lights", false)) {
+            swLights.isChecked = true
             clTrunk.setBackgroundResource(R.drawable.controls_shape_on)
             tvTrunk.setTextColor(Color.parseColor("#FFFFFF"))
             tvTrunkValue.setTextColor(Color.parseColor("#FFFFFF"))
-            tvTrunkValue.text = swTrunk.textOn
+            tvTrunkValue.text = swLights.textOn
         } else {
-            swTrunk.isChecked = false
+            swLights.isChecked = false
             clTrunk.setBackgroundResource(R.drawable.controls_shape)
             tvTrunk.setTextColor(Color.parseColor("#342675"))
             tvTrunkValue.setTextColor(Color.parseColor("#342675"))
-            tvTrunkValue.text = swTrunk.textOff
+            tvTrunkValue.text = swLights.textOff
         }
 
         swEngine.setOnCheckedChangeListener { buttonView, isChecked ->
@@ -158,19 +157,19 @@ class HomeActivity : AppCompatActivity() {
             edit.commit()
         }
 
-        swTrunk.setOnCheckedChangeListener { buttonView, isChecked ->
+        swLights.setOnCheckedChangeListener { buttonView, isChecked ->
             if(isChecked) {
                 clTrunk.setBackgroundResource(R.drawable.controls_shape_on)
                 tvTrunk.setTextColor(Color.parseColor("#FFFFFF"))
                 tvTrunkValue.setTextColor(Color.parseColor("#FFFFFF"))
-                tvTrunkValue.text = swTrunk.textOn
+                tvTrunkValue.text = swLights.textOn
             } else {
                 clTrunk.setBackgroundResource(R.drawable.controls_shape)
                 tvTrunk.setTextColor(Color.parseColor("#342675"))
                 tvTrunkValue.setTextColor(Color.parseColor("#342675"))
-                tvTrunkValue.text = swTrunk.textOff
+                tvTrunkValue.text = swLights.textOff
             }
-            edit.putBoolean("trunk", isChecked)
+            edit.putBoolean("lights", isChecked)
             edit.commit()
         }
 
@@ -238,18 +237,18 @@ class HomeActivity : AppCompatActivity() {
             tvDoorsValue.text = swDoors.textOff
         }
 
-        if(preferences.getBoolean("trunk", false)) {
-            swTrunk.isChecked = true
+        if(preferences.getBoolean("lights", false)) {
+            swLights.isChecked = true
             clTrunk.setBackgroundResource(R.drawable.controls_shape_on)
             tvTrunk.setTextColor(Color.parseColor("#FFFFFF"))
             tvTrunkValue.setTextColor(Color.parseColor("#FFFFFF"))
-            tvTrunkValue.text = swTrunk.textOn
+            tvTrunkValue.text = swLights.textOn
         } else {
-            swTrunk.isChecked = false
+            swLights.isChecked = false
             clTrunk.setBackgroundResource(R.drawable.controls_shape)
             tvTrunk.setTextColor(Color.parseColor("#342675"))
             tvTrunkValue.setTextColor(Color.parseColor("#342675"))
-            tvTrunkValue.text = swTrunk.textOff
+            tvTrunkValue.text = swLights.textOff
         }
 
         swEngine.setOnCheckedChangeListener { buttonView, isChecked ->
@@ -284,19 +283,19 @@ class HomeActivity : AppCompatActivity() {
             edit.commit()
         }
 
-        swTrunk.setOnCheckedChangeListener { buttonView, isChecked ->
+        swLights.setOnCheckedChangeListener { buttonView, isChecked ->
             if(isChecked) {
                 clTrunk.setBackgroundResource(R.drawable.controls_shape_on)
                 tvTrunk.setTextColor(Color.parseColor("#FFFFFF"))
                 tvTrunkValue.setTextColor(Color.parseColor("#FFFFFF"))
-                tvTrunkValue.text = swTrunk.textOn
+                tvTrunkValue.text = swLights.textOn
             } else {
                 clTrunk.setBackgroundResource(R.drawable.controls_shape)
                 tvTrunk.setTextColor(Color.parseColor("#342675"))
                 tvTrunkValue.setTextColor(Color.parseColor("#342675"))
-                tvTrunkValue.text = swTrunk.textOff
+                tvTrunkValue.text = swLights.textOff
             }
-            edit.putBoolean("trunk", isChecked)
+            edit.putBoolean("lights", isChecked)
             edit.commit()
         }
 
