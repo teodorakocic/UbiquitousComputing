@@ -27,4 +27,7 @@
     <string name="deactivated">deactivated</string>
     <string name="opened">Opened</string>
     <string name="closed">Closed</string>
+    <string name="on">On</string>
+    <string name="refresh">Refresh</string>
+    <string name="tap_to_connect_sensors">Tap to connect sensors</string>
 </resources>

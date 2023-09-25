@@ -27,6 +27,7 @@ open class Constants {
         const val PROXIMITY_STREAM = "alarmProximity"
         const val ROAD_CURVE_LIMIT = 0.5
         const val ACC_CURVE_LIMIT = 2.1
+        const val BLE_SERVICE = "00001101-0000-1000-8000-00805F9B34FB"
     }
 
 }

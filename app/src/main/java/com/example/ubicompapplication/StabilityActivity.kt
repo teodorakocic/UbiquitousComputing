@@ -1,6 +1,11 @@
 package com.example.ubicompapplication
 
 import android.annotation.SuppressLint
+import android.app.ProgressDialog
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothAdapter.getDefaultAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -22,14 +27,28 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import com.example.ubicompapplication.Constants.Companion.NOTIFICATION_CODE
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import java.io.IOException
+import java.util.UUID
 import kotlin.math.sqrt
 
 class StabilityActivity : AppCompatActivity() {
+
+    companion object {
+        var serviceUUID: UUID = UUID.fromString(Constants.BLE_SERVICE)
+        var bluetoothSocket: BluetoothSocket? = null
+        lateinit var progress: ProgressDialog
+        lateinit var bluetoothAdapter: BluetoothAdapter
+        var isConnected: Boolean = false
+        var address: String? = null
+    }
 
     private lateinit var tvAccelerationValue: TextView
     private lateinit var tvGyroscopeValue: TextView
@@ -74,13 +93,19 @@ class StabilityActivity : AppCompatActivity() {
             return@setOnMenuItemClickListener false
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if(address != null) {
+                address = intent.getStringExtra(DeviceSelectActivity.EXTRA_ADDRESS).toString()
+                connectToDevice()
+                sendCommand("x")
+            }
+        }
+
         preferences = this.getSharedPreferences(Constants.PREFERENCE_SMART_CAR, Context.MODE_PRIVATE)
         edit = preferences.edit()
 
         tvAccelerationValue.text = acceleration.toString()
         tvGyroscopeValue.text = gyro.toString()
-
-        startForegroundService()
 
         if(preferences.getBoolean("engine", false)) {
             tvParkingSensor.text = "deactivated"
@@ -165,6 +190,8 @@ class StabilityActivity : AppCompatActivity() {
         if(currentRadius > Constants.ROAD_CURVE_LIMIT && currentAt.toDouble() > Constants.ACC_CURVE_LIMIT) {
             tvESC.text = "activated"
             ivESCActive.visibility = View.VISIBLE
+            sendBrightnessCommand(75)
+            startForegroundService()
             val animation = AlphaAnimation(0.5f, 0f)
             animation.duration = 500
             animation.interpolator = LinearInterpolator()
@@ -184,6 +211,7 @@ class StabilityActivity : AppCompatActivity() {
         if(readSingleRuleValue(String(message.payload), Constants.PROXIMITY_STREAM) == "on") {
             tvParkingSensor.text = "activated"
             ivParkingSensorsActive.visibility = View.VISIBLE
+            sendBrightnessCommand(25)
             val animation = AlphaAnimation(0.5f, 0f)
             animation.duration = 500
             animation.interpolator = LinearInterpolator()
@@ -206,6 +234,7 @@ class StabilityActivity : AppCompatActivity() {
         if(readSingleRuleValue(String(message.payload), Constants.COLOR_STREAM).contains("on")) {
             edit.putBoolean("lights", true)
             edit.commit()
+            sendCommand("z")
             Toast.makeText(this@StabilityActivity, "Lights turned on!", Toast.LENGTH_SHORT).show()
         } else {
             edit.putBoolean("lights", false)
@@ -217,6 +246,7 @@ class StabilityActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         mqttClient.disconnect()
+        sendCommand("y")
         stopForegroundService()
     }
 
@@ -266,6 +296,78 @@ class StabilityActivity : AppCompatActivity() {
                 Toast.makeText(this, "Notification permission granted!", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(this, "Notification permission denied!", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun sendCommand(input: String) {
+        if (BleControlActivity.bluetoothSocket != null) {
+            try {
+                BleControlActivity.bluetoothSocket!!.outputStream.write(input.toByteArray())
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun sendIntCommand(input: Int) {
+        if (BleControlActivity.bluetoothSocket != null) {
+            try {
+                BleControlActivity.bluetoothSocket!!.outputStream.write(input)
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    private fun disconnect() {
+        if (BleControlActivity.bluetoothSocket != null) {
+            try {
+                BleControlActivity.bluetoothSocket!!.close()
+                BleControlActivity.bluetoothSocket = null
+                BleControlActivity.isConnected = false
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+        finish()
+    }
+
+    private fun sendBrightnessCommand(valueSend: Int) {
+        sendIntCommand(valueSend)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun connectToDevice() {
+        progress = ProgressDialog.show(this, "Connecting...", "please wait")
+        GlobalScope.launch(Dispatchers.Main) {
+            var connectSuccess = true
+            try {
+                if (bluetoothSocket == null || !isConnected) {
+                    bluetoothAdapter = getDefaultAdapter()
+                    val device: BluetoothDevice = bluetoothAdapter.getRemoteDevice(
+                        address
+                    )
+                    bluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(
+                        serviceUUID
+                    )
+                    bluetoothSocket!!.connect()
+                }
+            } catch (e: IOException) {
+                connectSuccess = false
+                e.printStackTrace()
+            }
+
+            launch(Dispatchers.Main) {
+                progress.dismiss()
+                if (connectSuccess) {
+                    val deviceName = bluetoothSocket!!.remoteDevice.name
+                    Toast.makeText(this@StabilityActivity, "Connected to device: $deviceName", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this@StabilityActivity, "Could not connect to device", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
+                isConnected = connectSuccess
             }
         }
     }
