@@ -34,7 +34,6 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var clClimate: ConstraintLayout
     private lateinit var clTrunk: ConstraintLayout
     private lateinit var clDoors: ConstraintLayout
-    private lateinit var ivConnect: ImageView
     private lateinit var bottomMenu: BottomNavigationView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,7 +56,6 @@ class HomeActivity : AppCompatActivity() {
         clClimate = findViewById(R.id.cl_climate)
         clTrunk = findViewById(R.id.cl_trunk)
         clDoors = findViewById(R.id.cl_doors)
-        ivConnect = findViewById(R.id.iv_ble)
         bottomMenu = findViewById(R.id.nav_bottom)
 
         bottomMenu.menu.findItem(R.id.homeFragment).isChecked = true
@@ -72,20 +70,6 @@ class HomeActivity : AppCompatActivity() {
             val intent = Intent(this@HomeActivity, StabilityActivity::class.java)
             startActivity(intent)
             return@setOnMenuItemClickListener false
-        }
-
-        ivConnect.setOnClickListener {
-//            startActivity(Intent(this@HomeActivity, DeviceSelectActivity::class.java))
-//            val intent = Intent(Intent.ACTION_ALL_APPS)
-            val intent = packageManager.getLaunchIntentForPackage("no.nordicsemi.android.mcp")
-            intent?.addCategory(Intent.CATEGORY_LAUNCHER)
-//            intent.data = Uri.parse("https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp")
-//            val chooser = Intent.createChooser(intent, "Choose app for connecting Your sensors")
-            try{
-                startActivity(intent)
-            } catch(e: ActivityNotFoundException) {
-                Toast.makeText(this@HomeActivity, e.message, Toast.LENGTH_SHORT).show()
-            }
         }
 
         val preferences = this.getSharedPreferences(Constants.PREFERENCE_SMART_CAR, Context.MODE_PRIVATE)

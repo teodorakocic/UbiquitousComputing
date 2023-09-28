@@ -2,6 +2,9 @@ package com.example.ubicompapplication
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
+import android.app.ProgressDialog
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothSocket
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -29,6 +32,7 @@ import org.eclipse.paho.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import java.util.Timer
 import java.util.TimerTask
+import java.util.UUID
 
 
 class ControlsActivity : AppCompatActivity() {

@@ -23,33 +23,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tv_tap_to_connect"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginStart="12dp"
-        android:elevation="10dp"
-        android:layout_marginTop="14dp"
-        android:fontFamily="@font/urbanist"
-        android:gravity="center"
-        android:text="@string/tap_to_connect_sensors"
-        android:textColor="@color/white"
-        android:textSize="12sp"
-        android:textStyle="normal"
-        app:layout_constraintStart_toEndOf="@id/iv_ble"
-        app:layout_constraintTop_toBottomOf="@id/tv_title_controls" />
-
-    <ImageView
-        android:id="@+id/iv_ble"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:layout_marginTop="8dp"
-        android:src="@drawable/ic_ble_connect"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_title_controls" />
-
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="256dp"
@@ -59,7 +32,7 @@
         android:src="@drawable/white_car_transparent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/iv_ble" />
+        app:layout_constraintTop_toBottomOf="@+id/tv_title_controls" />
 
     <LinearLayout
         android:id="@+id/ll_limits"

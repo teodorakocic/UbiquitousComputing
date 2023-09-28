@@ -48,4 +48,7 @@ dependencies {
     implementation ("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.1")
     implementation ("androidx.work:work-runtime:2.7.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+    implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.5.0")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.0")
+    implementation ("androidx.activity:activity-ktx:1.7.2")
 }

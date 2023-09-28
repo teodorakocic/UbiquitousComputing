@@ -8,6 +8,53 @@
     tools:context=".StabilityActivity">
 
     <TextView
+        android:id="@+id/tv_tap_to_connect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginStart="12dp"
+        android:elevation="10dp"
+        android:layout_marginTop="14dp"
+        android:fontFamily="@font/urbanist"
+        android:gravity="center"
+        android:text="@string/tap_to_connect_sensors"
+        android:textColor="@color/white"
+        android:textSize="12sp"
+        android:textStyle="normal"
+        app:layout_constraintStart_toEndOf="@id/iv_ble"
+        app:layout_constraintTop_toBottomOf="@id/tv_title_parameters" />
+
+    <ImageView
+        android:id="@+id/iv_ble"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/ic_ble_connect"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tv_title_parameters" />
+
+    <ScrollView
+        android:id="@+id/sv_scanned_devices"
+        android:layout_width="wrap_content"
+        android:layout_height="364dp"
+        android:scrollbarSize="4dp"
+        android:layout_marginTop="48dp"
+        android:scrollbars="vertical"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/iv_zigzag_1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rv_scanned_devices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:padding="2dp"
+            android:elevation="16dp" />
+    </ScrollView>
+
+    <TextView
         android:id="@+id/tv_title_parameters"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -31,7 +78,7 @@
         android:layout_marginTop="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/tv_title_parameters"
+        app:layout_constraintTop_toBottomOf="@+id/iv_ble"
         app:srcCompat="@drawable/zigzag" />
 
     <LinearLayout
@@ -174,7 +221,7 @@
         android:id="@+id/ll_activate_values"
         android:layout_width="324dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="56dp"
+        android:layout_marginTop="44dp"
         android:gravity="center"
         android:orientation="vertical"
         app:layout_constraintEnd_toEndOf="parent"
