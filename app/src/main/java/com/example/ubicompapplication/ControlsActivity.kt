@@ -127,7 +127,7 @@ class ControlsActivity : AppCompatActivity() {
                 if(topic.contains("alarmHighTemp")) {
                     receivedAlarmForHighTemperature(message)
                 }
-                if(topic.contains("alarmHighTemp")) {
+                if(topic.contains("alarmLowTemp")) {
                     receivedAlarmForLowTemperature(message)
                 }
                 if(topic.contains("alarmPress")) {
@@ -161,7 +161,7 @@ class ControlsActivity : AppCompatActivity() {
     @SuppressLint("SetTextI18n")
     private fun receivedTemperature(message: MqttMessage) {
         tvCurrentTemperature.text = "${readRuleValue(String(message.payload), Constants.TEMP_STREAM)} C"
-        currentTemperature = readRuleValue(String(message.payload), Constants.TEMP_STREAM).toDouble()
+        currentTemperature = readRuleValue(String(message.payload), Constants.TEMP_STREAM_VALUE).toDouble()
         if(currentTemperature < Constants.TEMPERATURE_LOW) {
             clHeating.setBackgroundResource(R.drawable.controls_shape_heating_on)
         }
@@ -180,7 +180,7 @@ class ControlsActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun receivedPressure(message: MqttMessage) {
-        tvCurrentPressure.text = "${readRuleValue(String(message.payload), Constants.PRESSURE_STREAM)} kPa"
+        tvCurrentPressure.text = "${readRuleValue(String(message.payload), Constants.PRESSURE_STREAM_VALUE)} kPa"
         currentPressure = readRuleValue(String(message.payload), Constants.PRESSURE_STREAM).toDouble()
         if(currentPressure in Constants.PRESSURE_LOW .. Constants.PRESSURE_HIGH) {
             if(preferences.getBoolean("climate", false)) {
@@ -198,7 +198,7 @@ class ControlsActivity : AppCompatActivity() {
         if(!preferences.getBoolean("doors", false)) {
             Toast.makeText(this@ControlsActivity, "Close the door to make the air conditioner work more efficiently!", Toast.LENGTH_SHORT).show()
         }
-        if(readRuleValue(String(message.payload), Constants.HIGH_TEMP_ALARM).contains("on")) {
+        if(readRuleValue(String(message.payload), Constants.TEMP_STREAM_VALUE).toDouble() > Constants.TEMPERATURE_HIGH) {
             clHeating.setBackgroundResource(R.drawable.controls_shape)
             clCooling.setBackgroundResource(R.drawable.controls_shape_cooling_on)
             tvCoolerValue.text = "Cold"
@@ -217,7 +217,7 @@ class ControlsActivity : AppCompatActivity() {
         if(!preferences.getBoolean("doors", false)) {
             Toast.makeText(this@ControlsActivity, "Close the door to make the air conditioner work more efficiently!", Toast.LENGTH_SHORT).show()
         }
-        if(readRuleValue(String(message.payload), Constants.LOW_TEMP_ALARM).contains("on")) {
+        if(readRuleValue(String(message.payload), Constants.LOW_TEMP_VALUE).toDouble() < Constants.TEMPERATURE_LOW) {
             clCooling.setBackgroundResource(R.drawable.controls_shape)
             clHeating.setBackgroundResource(R.drawable.controls_shape_heating_on)
             tvCoolerValue.text = "Heat"
@@ -236,7 +236,7 @@ class ControlsActivity : AppCompatActivity() {
         if(!preferences.getBoolean("doors", false)) {
             Toast.makeText(this@ControlsActivity, "Close the door to make the fan work more efficiently!", Toast.LENGTH_SHORT).show()
         }
-        if(readRuleValue(String(message.payload), Constants.PRESS_LIMITS_ALARM).contains("On")) {
+        if(readRuleValue(String(message.payload), Constants.PRESSURE_STREAM_VALUE).toDouble() !in Constants.PRESSURE_LOW..Constants.PRESSURE_HIGH) {
             clVentilation.setBackgroundResource(R.drawable.controls_shape_ventilation_on)
             tvFanValue.text = "On"
             tvFanValue.setTextColor(Color.parseColor("#90EE90"))

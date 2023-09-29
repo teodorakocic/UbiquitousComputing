@@ -1,19 +1,24 @@
 package com.example.ubicompapplication
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.SwitchCompat
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class HomeActivity : AppCompatActivity() {
@@ -36,6 +41,7 @@ class HomeActivity : AppCompatActivity() {
     private lateinit var clDoors: ConstraintLayout
     private lateinit var bottomMenu: BottomNavigationView
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
@@ -71,6 +77,17 @@ class HomeActivity : AppCompatActivity() {
             startActivity(intent)
             return@setOnMenuItemClickListener false
         }
+
+        if (!isPermissionsGranted(this@HomeActivity)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val permissions = mutableSetOf(
+                    Manifest.permission.NEARBY_WIFI_DEVICES
+                )
+                ActivityCompat.requestPermissions(this@HomeActivity, permissions.toTypedArray(), 600)
+            }
+        }
+
+        requestNearbyWifiDevicesPermission()
 
         val preferences = this.getSharedPreferences(Constants.PREFERENCE_SMART_CAR, Context.MODE_PRIVATE)
         val edit = preferences.edit()
@@ -320,6 +337,31 @@ class HomeActivity : AppCompatActivity() {
             edit.putBoolean("doors", isChecked)
             edit.commit()
         }
+    }
+
+    private fun isPermissionsGranted(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.NEARBY_WIFI_DEVICES) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private val isNearbyDevicesPermissionGranted
+        get() = hasPermission(Manifest.permission.NEARBY_WIFI_DEVICES)
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun requestNearbyWifiDevicesPermission() {
+        if(isNearbyDevicesPermissionGranted)
+            return
+        ActivityCompat.requestPermissions(this@HomeActivity, arrayOf(Manifest.permission.NEARBY_WIFI_DEVICES),
+            Constants.LOCAL_NETWORK_CODE
+        )
+    }
+
+    private fun hasPermission(permissionType: String): Boolean {
+        return ActivityCompat.checkSelfPermission(this, permissionType) ==
+                PackageManager.PERMISSION_GRANTED
     }
 
     override fun onBackPressed() {

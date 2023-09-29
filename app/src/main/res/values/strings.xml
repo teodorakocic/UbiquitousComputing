@@ -30,4 +30,6 @@
     <string name="on">On</string>
     <string name="refresh">Refresh</string>
     <string name="tap_to_connect_sensors">Tap to connect sensors</string>
+    <string name="kpa">-- kPa</string>
+    <string name="c">-- C</string>
 </resources>

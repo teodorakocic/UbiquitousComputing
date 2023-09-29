@@ -40,6 +40,7 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.ubicompapplication.Constants.Companion.LED_SERVICE
+import com.example.ubicompapplication.Constants.Companion.LOCAL_NETWORK_CODE
 import com.example.ubicompapplication.Constants.Companion.NOTIFICATION_CODE
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import kotlinx.serialization.decodeFromString
@@ -111,19 +112,17 @@ class StabilityActivity : AppCompatActivity() {
         rvScannedDevices = findViewById(R.id.rv_scanned_devices)
 
         if (!isPermissionsGranted(this@StabilityActivity)) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val permissions = mutableSetOf(
-                    Manifest.permission.BLUETOOTH,
-                    Manifest.permission.BLUETOOTH_ADMIN,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
-                    permissions.add(Manifest.permission.BLUETOOTH_SCAN)
-                }
-                ActivityCompat.requestPermissions(this@StabilityActivity, permissions.toTypedArray(), 600)
+            val permissions = mutableSetOf(
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                permissions.add(Manifest.permission.BLUETOOTH_CONNECT)
+                permissions.add(Manifest.permission.BLUETOOTH_SCAN)
             }
+            ActivityCompat.requestPermissions(this@StabilityActivity, permissions.toTypedArray(), 600)
         }
 
         btnScan.setOnClickListener {
@@ -314,10 +313,6 @@ class StabilityActivity : AppCompatActivity() {
             }
         }
 
-//        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
-//            val characteristic: BluetoothGattCharacteristic = gatt.getService(serviceUUID).getCharacteristic(serviceUUID)
-//        }
-
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             with(gatt) {
                 bluetoothGatt = gatt
@@ -414,10 +409,10 @@ class StabilityActivity : AppCompatActivity() {
     private fun BluetoothGattCharacteristic.isReadable(): Boolean =
         containsProperty(BluetoothGattCharacteristic.PROPERTY_READ)
 
-    fun BluetoothGattCharacteristic.isWritable(): Boolean =
+    private fun BluetoothGattCharacteristic.isWritable(): Boolean =
         containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE)
 
-    fun BluetoothGattCharacteristic.isWritableWithoutResponse(): Boolean =
+    private fun BluetoothGattCharacteristic.isWritableWithoutResponse(): Boolean =
         containsProperty(BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)
 
     private fun BluetoothGattCharacteristic.containsProperty(property: Int): Boolean {
@@ -425,7 +420,6 @@ class StabilityActivity : AppCompatActivity() {
     }
 
     private fun readChValue() {
-//        val charUuid = convertFromInteger(Constants.BLE_CHARACTERISTIC)
         val characteristic = bluetoothGatt.getService(UUID.fromString(LED_SERVICE))?.getCharacteristic(UUID.fromString(Constants.BUTTON_CHARACTERISTIC))
         if (characteristic?.isReadable() == true) {
             bluetoothGatt.readCharacteristic(characteristic)
@@ -457,9 +451,12 @@ class StabilityActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun receivedMovement(message: MqttMessage) {
-        val currentAt = readRuleValue(String(message.payload), Constants.ACC_GYRO_STREAM)[1]
-        val currentAn = readRuleValue(String(message.payload), Constants.ACC_GYRO_STREAM)[0]
-        val omega = readRuleValue(String(message.payload), Constants.ACC_GYRO_STREAM)[5]
+//        val currentAt = readRuleValue(String(message.payload), Constants.ACC_GYRO_STREAM)[1]
+//        val currentAn = readRuleValue(String(message.payload), Constants.ACC_GYRO_STREAM)[0]
+//        val omega = readRuleValue(String(message.payload), Constants.ACC_GYRO_STREAM)[5]
+        val currentAt = readSingleRuleValue(String(message.payload), Constants.ACC_Y_VALUE).toDouble()
+        val currentAn = readSingleRuleValue(String(message.payload), Constants.ACC_X_VALUE).toDouble()
+        val omega = readSingleRuleValue(String(message.payload), Constants.GYRO_Z_VALUE).toDouble()
 
         val currentRadius = currentAn.toDouble() / (omega.toDouble() * omega.toDouble())
 
@@ -495,7 +492,7 @@ class StabilityActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun receivedProximityAlarm(message: MqttMessage) {
-        if(readSingleRuleValue(String(message.payload), Constants.PROXIMITY_STREAM) == "on") {
+        if(readSingleRuleValue(String(message.payload), Constants.PROXIMITY_STREAM_VALUE).toDouble() < 50.0) {
             tvParkingSensor.text = "activated"
             ivParkingSensorsActive.visibility = View.VISIBLE
             //parking sensors notification
@@ -519,7 +516,7 @@ class StabilityActivity : AppCompatActivity() {
 
     @SuppressLint("SetTextI18n")
     private fun receivedLightAlarm(message: MqttMessage) {
-        if(readSingleRuleValue(String(message.payload), Constants.COLOR_STREAM).contains("on")) {
+        if(readSingleRuleValue(String(message.payload), Constants.COLOR_STREAM_VALUE).toDouble() < 0.3) {
             edit.putBoolean("lights", true)
             edit.commit()
             //notify user to turn on the lights
@@ -570,14 +567,6 @@ class StabilityActivity : AppCompatActivity() {
         tvSpeedValue.text = "--"
     }
 
-    private fun checkPermissions(permission: String, requestCode: Int) {
-        if(checkSelfPermission(permission) == PackageManager.PERMISSION_DENIED) {
-            requestPermissions(arrayOf(permission), requestCode)
-        } else {
-//            Toast.makeText(this, "Permission already granted!", Toast.LENGTH_SHORT).show()
-        }
-    }
-
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -595,21 +584,17 @@ class StabilityActivity : AppCompatActivity() {
                     Toast.makeText(this, "Notification permission denied!", Toast.LENGTH_SHORT).show()
                 }
             }
+            LOCAL_NETWORK_CODE -> {
+                if(grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Local network permission granted!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Local network permission denied!", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 
     private fun sendIntCommand(bleGatt: BluetoothGatt, input: Int) {
         writeCharacteristic(bleGatt.getService(UUID.fromString(LED_SERVICE)).getCharacteristic(UUID.fromString(Constants.LED_CHARACTERISTIC)), BigInteger.valueOf(input.toLong()).toByteArray())
-    }
-
-    private fun sendBrightnessCommand(bleGatt: BluetoothGatt, valueSend: Int) {
-        sendIntCommand(bleGatt, valueSend)
-    }
-
-    private fun convertFromInteger(i: Int): UUID {
-        val msb = 0x0000000000001000L
-        val lsb = -0x7fffff7fa064cb05L
-        val value = (i and -0x1).toLong()
-        return UUID(msb or (value shl 32), lsb)
     }
 }
